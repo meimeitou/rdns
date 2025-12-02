@@ -1,0 +1,18 @@
+[package]
+name = "rdns-ebpf"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aya-ebpf = "0.1"
+aya-log-ebpf = "0.1"
+rdns-common = { path = "../rdns-common" }
+network-types = "0.0.7"
+
+[[bin]]
+name = "rdns-xdp"
+path = "src/xdp.rs"
+
+[[bin]]
+name = "rdns-tc"
+path = "src/tc.rs"

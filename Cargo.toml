@@ -1,0 +1,10 @@
+[workspace]
+members = ["rdns", "rdns-common", "rdns-ebpf"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+
+[profile.release]
+lto = true

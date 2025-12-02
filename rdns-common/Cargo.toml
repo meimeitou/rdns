@@ -1,0 +1,11 @@
+[package]
+name = "rdns-common"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+user = ["aya"]
+
+[dependencies]
+aya = { version = "0.13", optional = true }

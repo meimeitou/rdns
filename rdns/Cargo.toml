@@ -1,0 +1,50 @@
+[package]
+name = "rdns"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rdns-common = { path = "../rdns-common", features = ["user"] }
+
+# eBPF
+aya = "0.13"
+aya-log = "0.2"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP framework
+axum = "0.7"
+tower-http = { version = "0.6", features = ["cors"] }
+
+# Configuration
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Metrics
+prometheus = "0.13"
+lazy_static = "1.4"
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# DNS parsing
+dns-parser = "0.8"
+
+# Misc
+bytes = "1"
+ipnet = "2"
+
+[build-dependencies]
+anyhow = "1"

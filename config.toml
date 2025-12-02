@@ -1,0 +1,63 @@
+# rdns 配置文件示例
+
+# 要监控的网卡列表（支持多个）
+interfaces = ["enp0s3"]
+
+[server]
+# HTTP API 监听地址
+http_addr = "0.0.0.0:8080"
+# Prometheus metrics 端口（通过 /metrics 端点访问）
+metrics_addr = "0.0.0.0:9090"
+
+# eBPF 挂载点配置（XDP 或 TC 二选一）
+# 
+# 方式一：使用 XDP（推荐，高性能入站过滤）
+[ebpf.xdp]
+# XDP flags: 
+#   - "default": 自动选择
+#   - "skb": Generic XDP (兼容性最好)
+#   - "driver": Native XDP (需要驱动支持)
+#   - "hw": Hardware offload (需要网卡支持)
+flags = "default"
+
+# 方式二：使用 TC（支持出站过滤）
+# 注释掉上面的 [ebpf.xdp]，启用下面的配置
+# [ebpf.tc]
+# direction = "ingress"  # "ingress", "egress", 或 "both"
+
+# 过滤配置
+[filter]
+# 过滤模式: "blacklist" 或 "whitelist"
+#   - blacklist: 默认放行，匹配黑名单则丢弃
+#   - whitelist: 默认丢弃，匹配白名单则放行
+mode = "blacklist"
+
+# IP 过滤（在 eBPF 内核态执行，高性能）
+[filter.ip]
+# IP 黑名单（支持单个 IP 或 CIDR）
+blacklist = [
+    # "192.168.1.100",
+    # "10.0.0.0/8",
+]
+# IP 白名单
+whitelist = []
+
+# 域名过滤（在用户态执行，支持通配符）
+[filter.domain]
+# 域名黑名单
+# 支持通配符:
+#   - "*.example.com" - 匹配所有 example.com 的子域名
+#   - "ads.*" - 匹配所有以 ads. 开头的域名
+#   - "*tracking*" - 匹配包含 tracking 的域名
+blacklist = [
+    # "*.malware.com",
+    # "ads.example.com",
+    # "*tracking*",
+]
+# 域名白名单
+whitelist = []
+
+# 日志配置
+[logging]
+# 日志级别: trace, debug, info, warn, error
+level = "info"
