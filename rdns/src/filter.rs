@@ -1,6 +1,10 @@
 //! 域名过滤器（用户态）
+//! 过滤逻辑：白名单优先，然后检查黑名单
+//!   1. 如果域名在白名单中 -> 不过滤
+//!   2. 如果域名在黑名单中 -> 过滤
+//!   3. 否则 -> 不过滤
 
-use crate::config::{FilterConfig, FilterMode};
+use crate::config::FilterConfig;
 
 /// 域名过滤器
 pub struct DomainFilter {
@@ -77,21 +81,20 @@ impl DomainFilter {
     }
 
     /// 检查域名是否应该被过滤
-    pub fn should_filter(&self, domain: &str, config: &FilterConfig) -> bool {
-        match config.mode {
-            FilterMode::Blacklist => {
-                // 黑名单模式：匹配则过滤
-                self.blacklist_patterns
-                    .iter()
-                    .any(|p| Self::matches(domain, p))
-            }
-            FilterMode::Whitelist => {
-                // 白名单模式：不匹配则过滤
-                !self.whitelist_patterns
-                    .iter()
-                    .any(|p| Self::matches(domain, p))
-            }
+    /// 逻辑：白名单优先，然后检查黑名单
+    pub fn should_filter(&self, domain: &str, _config: &FilterConfig) -> bool {
+        // 1. 白名单优先：匹配白名单则不过滤
+        if self.whitelist_patterns.iter().any(|p| Self::matches(domain, p)) {
+            return false;
         }
+        
+        // 2. 检查黑名单：匹配则过滤
+        if self.blacklist_patterns.iter().any(|p| Self::matches(domain, p)) {
+            return true;
+        }
+        
+        // 3. 默认不过滤
+        false
     }
 
     /// 添加域名到黑名单

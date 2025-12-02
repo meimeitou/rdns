@@ -81,6 +81,28 @@ clean:
 clean-ebpf:
 	rm -rf target/bpfel-unknown-none
 
+.PHONY: clean-dist
+clean-dist:
+	rm -rf dist
+
+# ============ 打包 ============
+
+# 打包发布版本
+.PHONY: package
+package:
+	@chmod +x scripts/package.sh
+	@scripts/package.sh
+
+# 仅构建不打包
+.PHONY: dist
+dist: build-release
+	@mkdir -p dist
+	@cp target/release/rdns dist/
+	@cp target/bpfel-unknown-none/release/rdns-xdp dist/
+	@cp target/bpfel-unknown-none/release/rdns-tc dist/
+	@cp config.toml dist/config.toml.example
+	@echo "Output files in dist/"
+
 # ============ 安装依赖 ============
 
 .PHONY: setup
@@ -96,7 +118,7 @@ help:
 	@echo "rdns Makefile"
 	@echo ""
 	@echo "构建:"
-	@echo "  make              - 构建 eBPF 和用户态程序 (debug)"
+	@echo "  make all          - 构建 eBPF 和用户态程序 (debug)"
 	@echo "  make build-ebpf   - 仅构建 eBPF 程序"
 	@echo "  make build        - 构建用户态程序 (debug)"
 	@echo "  make build-release- 构建用户态程序 (release)"
@@ -105,6 +127,10 @@ help:
 	@echo "  make run          - 运行程序 (需要 sudo)"
 	@echo "  make run-release  - 运行 release 版本"
 	@echo "  make run-debug    - 运行 debug 日志模式"
+	@echo ""
+	@echo "打包:"
+	@echo "  make package      - 完整打包 (构建+打包+压缩)"
+	@echo "  make dist         - 简单打包 (仅复制产物到 dist/)"
 	@echo ""
 	@echo "测试与检查:"
 	@echo "  make test         - 运行测试"
@@ -116,4 +142,5 @@ help:
 	@echo "其他:"
 	@echo "  make setup        - 安装构建依赖"
 	@echo "  make clean        - 清理构建产物"
+	@echo "  make clean-dist   - 清理打包产物"
 	@echo "  make help         - 显示帮助"

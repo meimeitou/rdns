@@ -3,7 +3,6 @@
         "./rdns/Cargo.toml",
         "./rdns-common/Cargo.toml"
     ],
-    "rust-analyzer.checkOnSave.allTargets": false,
     "rust-analyzer.cargo.features": "all",
     "rust-analyzer.files.excludeDirs": [
         "rdns-ebpf"

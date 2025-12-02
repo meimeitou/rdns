@@ -56,36 +56,6 @@ cargo +nightly build --package=rdns-ebpf \
 cargo build --package=rdns --release
 ```
 
-## 配置
-
-编辑 `config.toml`:
-
-```toml
-# 网络接口
-interfaces = ["eth0"]
-
-[ebpf]
-hook = "xdp"           # "xdp" 或 "tc"
-xdp_flags = "skb_mode" # "driver_mode", "skb_mode", "hardware_mode"
-
-[filter]
-mode = "blacklist"     # "blacklist" 或 "whitelist"
-
-[filter.ip]
-blacklist = ["192.168.1.100"]
-whitelist = []
-
-[filter.domain]
-blacklist = ["*.ads.com", "tracker.example.com"]
-whitelist = []
-
-[server]
-http_addr = "0.0.0.0:8080"
-
-[logging]
-level = "info"
-```
-
 ## 运行
 
 ```bash

@@ -12,7 +12,7 @@ pub struct Config {
     pub server: ServerConfig,
     /// 网卡列表（支持多个）
     pub interfaces: Vec<String>,
-    pub ebpf: EbpfHook,
+    pub ebpf: EbpfConfig,
     pub filter: FilterConfig,
     pub logging: LoggingConfig,
 }
@@ -24,30 +24,45 @@ pub struct ServerConfig {
     pub metrics_addr: String,
 }
 
-/// eBPF 挂载点配置（XDP 或 TC 二选一）
+/// eBPF 配置
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EbpfHook {
-    /// XDP 模式（高性能入站过滤）
-    Xdp(XdpConfig),
-    /// TC 模式（支持出站过滤）
-    Tc(TcConfig),
-}
-
-/// XDP 配置
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct XdpConfig {
+pub struct EbpfConfig {
+    /// 模式: "xdp" 或 "tc"
+    #[serde(default)]
+    pub mode: EbpfMode,
     /// XDP flags: "default", "skb", "driver", "hw"
     #[serde(default)]
-    pub flags: XdpFlags,
+    pub xdp_flags: XdpFlags,
+    /// TC 方向: "ingress", "egress", "both"
+    #[serde(default)]
+    pub tc_direction: TcDirection,
+    /// XDP eBPF 程序路径（可选，默认自动搜索）
+    #[serde(default)]
+    pub xdp_program_path: Option<String>,
+    /// TC eBPF 程序路径（可选，默认自动搜索）
+    #[serde(default)]
+    pub tc_program_path: Option<String>,
 }
 
-impl Default for XdpConfig {
+impl Default for EbpfConfig {
     fn default() -> Self {
         Self {
-            flags: XdpFlags::Default,
+            mode: EbpfMode::Xdp,
+            xdp_flags: XdpFlags::Default,
+            tc_direction: TcDirection::Ingress,
+            xdp_program_path: None,
+            tc_program_path: None,
         }
     }
+}
+
+/// eBPF 模式
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum EbpfMode {
+    #[default]
+    Xdp,
+    Tc,
 }
 
 /// XDP 挂载模式
@@ -61,45 +76,25 @@ pub enum XdpFlags {
     Hw,       // Hardware offload
 }
 
-/// TC 配置
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct TcConfig {
-    /// ingress, egress, 或 both
-    pub direction: TcDirection,
-}
-
 /// TC 方向
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum TcDirection {
+    #[default]
     Ingress,
     Egress,
     Both,
 }
 
 /// 过滤配置
+/// 过滤逻辑：白名单优先，然后检查黑名单
+///   1. 如果 IP/域名 在白名单中 -> 放行
+///   2. 如果 IP/域名 在黑名单中 -> 过滤
+///   3. 否则 -> 放行
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FilterConfig {
-    pub mode: FilterMode,
     pub ip: IpFilterConfig,
     pub domain: DomainFilterConfig,
-}
-
-/// 过滤模式
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum FilterMode {
-    Blacklist,
-    Whitelist,
-}
-
-impl FilterMode {
-    pub fn as_u8(&self) -> u8 {
-        match self {
-            FilterMode::Blacklist => 0,
-            FilterMode::Whitelist => 1,
-        }
-    }
 }
 
 /// IP 过滤配置
@@ -203,9 +198,8 @@ impl Default for Config {
                 metrics_addr: "0.0.0.0:9090".to_string(),
             },
             interfaces: vec!["eth0".to_string()],
-            ebpf: EbpfHook::Xdp(XdpConfig::default()),
+            ebpf: EbpfConfig::default(),
             filter: FilterConfig {
-                mode: FilterMode::Blacklist,
                 ip: IpFilterConfig {
                     blacklist: vec![],
                     whitelist: vec![],

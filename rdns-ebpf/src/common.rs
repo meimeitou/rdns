@@ -108,25 +108,30 @@ pub fn is_ip_whitelisted(ip: u32, whitelist: &HashMap<u32, u8>) -> bool {
     unsafe { whitelist.get(&ip).is_some() }
 }
 
-/// 检查过滤模式并决定是否通过
-/// filter_mode: 0 = blacklist, 1 = whitelist
+/// 检查是否应该放行
+/// 过滤逻辑：白名单优先，然后检查黑名单
+/// 1. 如果 IP 在白名单中 -> 放行
+/// 2. 如果 IP 在黑名单中 -> 丢弃
+/// 3. 否则 -> 放行
 #[inline(always)]
 pub fn should_pass(
     src_ip: u32,
     blacklist: &HashMap<u32, u8>,
     whitelist: &HashMap<u32, u8>,
-    filter_mode: &HashMap<u32, u8>,
+    _filter_mode: &HashMap<u32, u8>,
 ) -> bool {
-    // 获取过滤模式，默认为黑名单模式 (0)
-    let mode = unsafe { filter_mode.get(&0).copied().unwrap_or(0) };
-
-    if mode == 0 {
-        // 黑名单模式：在黑名单中则丢弃
-        !is_ip_blacklisted(src_ip, blacklist)
-    } else {
-        // 白名单模式：不在白名单中则丢弃
-        is_ip_whitelisted(src_ip, whitelist)
+    // 白名单优先：在白名单中则直接放行
+    if is_ip_whitelisted(src_ip, whitelist) {
+        return true;
     }
+    
+    // 检查黑名单：在黑名单中则丢弃
+    if is_ip_blacklisted(src_ip, blacklist) {
+        return false;
+    }
+    
+    // 默认放行
+    true
 }
 
 /// 发送 DNS 事件到 RingBuf
