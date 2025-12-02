@@ -48,7 +48,8 @@ build_all() {
         --release
 
     info "Building userspace program (release)..."
-    cargo build --package=rdns --release
+    # 设置 SKIP_EBPF_BUILD 跳过 build.rs 中的 eBPF 构建（已经单独构建过了）
+    SKIP_EBPF_BUILD=1 cargo build --package=rdns --release
 }
 
 # 打包

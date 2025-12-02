@@ -25,7 +25,7 @@ build: build-ebpf
 # 构建用户态程序 (release)
 .PHONY: build-release
 build-release: build-ebpf
-	cargo build --package=rdns --release
+	SKIP_EBPF_BUILD=1 cargo build --package=rdns --release
 
 # ============ 运行 ============
 

@@ -4,6 +4,13 @@ fn main() -> anyhow::Result<()> {
     // 告诉 cargo 在 eBPF 程序变更时重新构建
     println!("cargo:rerun-if-changed=../rdns-ebpf/src");
     
+    // 如果设置了 SKIP_EBPF_BUILD 环境变量，跳过 eBPF 构建
+    // 这在打包脚本中使用，因为我们会先单独构建 eBPF
+    if std::env::var("SKIP_EBPF_BUILD").is_ok() {
+        println!("cargo:warning=SKIP_EBPF_BUILD set, skipping eBPF build");
+        return Ok(());
+    }
+    
     // 检查是否有 bpf-linker
     let has_bpf_linker = Command::new("which")
         .arg("bpf-linker")
