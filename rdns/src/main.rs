@@ -9,7 +9,6 @@ mod filter;
 mod metrics;
 
 use std::sync::Arc;
-use std::net::Ipv4Addr;
 use anyhow::{Context, Result};
 use clap::Parser;
 use log::info;
@@ -21,76 +20,6 @@ use api::routes::AppState;
 use config::Config;
 use ebpf_loader::EbpfManager;
 use filter::DomainFilter;
-
-/// 事件处理循环
-async fn run_event_processor(ebpf: Arc<RwLock<EbpfManager>>) -> Result<()> {
-    info!("Starting DNS event processor...");
-    
-    let mut ebpf_guard = ebpf.write().await;
-    let mut ring_buf = ebpf_guard.get_ring_buf()
-        .context("Failed to get RingBuf")?;
-    
-    loop {
-        while let Some(item) = ring_buf.next() {
-            let data: &[u8] = item.as_ref();
-            if data.len() >= std::mem::size_of::<rdns_common::DnsEvent>() {
-                let event: &rdns_common::DnsEvent = 
-                    unsafe { &*(data.as_ptr() as *const rdns_common::DnsEvent) };
-                
-                // 更新 metrics
-                metrics::DNS_PACKETS_TOTAL.inc();
-                
-                let src_ip = Ipv4Addr::from(event.src_ip);
-                let dst_ip = Ipv4Addr::from(event.dst_ip);
-                
-                metrics::DNS_PACKETS_BY_SRC
-                    .with_label_values(&[&src_ip.to_string()])
-                    .inc();
-                
-                // 解析 DNS payload
-                let payload_len = event.payload_len as usize;
-                if payload_len > 0 && payload_len <= event.payload.len() {
-                    let payload = &event.payload[..payload_len];
-                    
-                    match dns_parser::parse_dns_packet(payload) {
-                        Ok(dns_info) => {
-                            log::info!(
-                                "DNS {} | {} -> {} | {} {}",
-                                if dns_info.is_query { "Query" } else { "Response" },
-                                src_ip,
-                                dst_ip,
-                                dns_info.query_type,
-                                dns_info.domain
-                            );
-                            
-                            metrics::DNS_QUERIES_BY_DOMAIN
-                                .with_label_values(&[&dns_info.domain])
-                                .inc();
-                        }
-                        Err(e) => {
-                            log::debug!(
-                                "DNS packet from {} (len={}) parse error: {}",
-                                src_ip,
-                                payload_len,
-                                e
-                            );
-                        }
-                    }
-                } else {
-                    log::info!(
-                        "DNS packet: {} -> {} (ports {}:{}) len={}",
-                        src_ip,
-                        dst_ip,
-                        event.src_port,
-                        event.dst_port,
-                        event.payload_len
-                    );
-                }
-            }
-        }
-        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-    }
-}
 
 /// eBPF-based DNS packet capture daemon
 #[derive(Parser, Debug)]
@@ -196,8 +125,8 @@ async fn main() -> Result<()> {
             }
         }
         
-        // 事件处理（使用独立函数）
-        result = run_event_processor(ebpf.clone()) => {
+        // 事件处理（使用 event_handler 模块）
+        result = event_handler::run_event_loop(ebpf.clone()) => {
             if let Err(e) = result {
                 log::error!("Event processor error: {}", e);
             }

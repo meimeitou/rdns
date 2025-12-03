@@ -11,16 +11,26 @@ metrics_addr = "0.0.0.0:9090"
 
 # eBPF 配置
 [ebpf]
-# 模式: "xdp"（推荐，高性能入站过滤）或 "tc"（支持出站过滤）
-mode = "tc"
-# XDP flags（仅 mode = "xdp" 时有效）:
+# 部署模式:
+#   - "xdp": 仅 XDP（过滤 + 抓取入口流量）
+#   - "tc": 仅 TC（抓取双向流量，无过滤）
+#   - "xdp_tc": XDP + TC（XDP 过滤，TC 抓取双向流量）【推荐】
+mode = "xdp_tc"
+
+# XDP flags（mode = "xdp" 或 "xdp_tc" 时有效）:
 #   - "default": 自动选择
 #   - "skb": Generic XDP (兼容性最好)
 #   - "driver": Native XDP (需要驱动支持)
 #   - "hw": Hardware offload (需要网卡支持)
 xdp_flags = "default"
-# TC 方向（仅 mode = "tc" 时有效）: "ingress", "egress", 或 "both"
-tc_direction = "ingress"
+
+# TC 方向（mode = "tc" 或 "xdp_tc" 时有效）: "ingress", "egress", 或 "both"
+tc_direction = "both"
+
+# XDP 是否启用流量抓取（仅 mode = "xdp" 时有效）
+# mode = "xdp_tc" 时自动关闭，由 TC 负责抓取
+xdp_capture_enabled = true
+
 # eBPF 程序路径（可选，默认自动搜索）
 # xdp_program_path = "/path/to/rdns-xdp"
 # tc_program_path = "/path/to/rdns-tc"

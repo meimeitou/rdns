@@ -42,10 +42,12 @@ clean_dist() {
 # 构建
 build_all() {
     info "Building eBPF programs..."
-    cargo +nightly build --package=rdns-ebpf \
+    cd "$PROJECT_ROOT/rdns-ebpf"
+    cargo +nightly build \
         -Z build-std=core \
         --target=bpfel-unknown-none \
         --release
+    cd "$PROJECT_ROOT"
 
     info "Building userspace program (release)..."
     # 设置 SKIP_EBPF_BUILD 跳过 build.rs 中的 eBPF 构建（已经单独构建过了）
@@ -85,9 +87,14 @@ http_addr = "0.0.0.0:8080"
 metrics_addr = "0.0.0.0:9090"
 
 [ebpf]
-mode = "xdp"
+# 部署模式:
+#   - "xdp": 仅 XDP（过滤 + 抓取入口流量）
+#   - "tc": 仅 TC（抓取双向流量，无过滤）
+#   - "xdp_tc": XDP + TC（XDP 过滤，TC 抓取双向流量）【推荐】
+mode = "xdp_tc"
 xdp_flags = "default"
-tc_direction = "ingress"
+tc_direction = "both"
+xdp_capture_enabled = true
 # 使用安装路径
 xdp_program_path = "/usr/lib/rdns/ebpf/rdns-xdp"
 tc_program_path = "/usr/lib/rdns/ebpf/rdns-tc"

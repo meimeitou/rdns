@@ -10,9 +10,10 @@ all: build-ebpf build
 # ============ 构建 ============
 
 # 构建 eBPF 程序 (需要 nightly)
+# rdns-ebpf 已从 workspace 排除，需要在其目录下单独构建
 .PHONY: build-ebpf
 build-ebpf:
-	cargo +nightly build --package=rdns-ebpf \
+	cd rdns-ebpf && cargo +nightly build \
 		-Z build-std=core \
 		--target=bpfel-unknown-none \
 		--release

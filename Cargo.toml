@@ -1,5 +1,8 @@
 [workspace]
-members = ["rdns", "rdns-common", "rdns-ebpf"]
+members = ["rdns", "rdns-common"]
+# rdns-ebpf 需要用 nightly 和 bpfel-unknown-none target 单独编译
+# 使用 make build-ebpf 或 cargo +nightly build -p rdns-ebpf --target=bpfel-unknown-none -Z build-std=core
+exclude = ["rdns-ebpf"]
 resolver = "2"
 
 [workspace.package]

@@ -11,8 +11,6 @@ pub struct DnsInfo {
     pub query_type: String,
     /// 域名
     pub domain: String,
-    /// 事务 ID
-    pub transaction_id: u16,
 }
 
 /// 解析 DNS 包
@@ -22,7 +20,6 @@ pub fn parse_dns_packet(data: &[u8]) -> Result<DnsInfo> {
     }
 
     // DNS 头部
-    let transaction_id = u16::from_be_bytes([data[0], data[1]]);
     let flags = u16::from_be_bytes([data[2], data[3]]);
     let is_query = (flags & 0x8000) == 0;
     let qdcount = u16::from_be_bytes([data[4], data[5]]);
@@ -58,7 +55,6 @@ pub fn parse_dns_packet(data: &[u8]) -> Result<DnsInfo> {
         is_query,
         query_type,
         domain,
-        transaction_id,
     })
 }
 
@@ -67,7 +63,6 @@ fn parse_domain_name(data: &[u8], offset: &mut usize) -> Result<String> {
     let mut labels = Vec::new();
     let mut jumped = false;
     let mut jump_offset = 0;
-    let original_offset = *offset;
 
     loop {
         if *offset >= data.len() {
@@ -145,6 +140,5 @@ mod tests {
         assert!(info.is_query);
         assert_eq!(info.domain, "example.com");
         assert_eq!(info.query_type, "A");
-        assert_eq!(info.transaction_id, 0x1234);
     }
 }

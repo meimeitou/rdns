@@ -1,7 +1,7 @@
 [package]
 name = "rdns-ebpf"
-version.workspace = true
-edition.workspace = true
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
 aya-ebpf = "0.1"
@@ -9,10 +9,18 @@ aya-log-ebpf = "0.1"
 rdns-common = { path = "../rdns-common" }
 network-types = "0.0.7"
 
+# XDP 程序：过滤 + 可选抓取
+# - 支持 IP 黑白名单过滤（仅 IPv4）
+# - 可配置是否启用流量抓取
+# - 挂载点：网卡入口（最早处理）
 [[bin]]
 name = "rdns-xdp"
-path = "src/xdp.rs"
+path = "src/xdp_prog.rs"
 
+# TC 程序：纯抓取
+# - 支持 IPv4 和 IPv6
+# - 支持双向流量（ingress + egress）
+# - 挂载点：TC（在 XDP 之后）
 [[bin]]
 name = "rdns-tc"
-path = "src/tc.rs"
+path = "src/tc_prog.rs"

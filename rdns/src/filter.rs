@@ -14,6 +14,7 @@ pub struct DomainFilter {
     whitelist_patterns: Vec<Pattern>,
 }
 
+#[allow(dead_code)]
 /// 匹配模式
 enum Pattern {
     /// 精确匹配
@@ -70,6 +71,7 @@ impl DomainFilter {
     }
 
     /// 检查域名是否匹配模式
+    #[allow(dead_code)]
     fn matches(domain: &str, pattern: &Pattern) -> bool {
         let domain_lower = domain.to_lowercase();
         match pattern {
@@ -82,6 +84,7 @@ impl DomainFilter {
 
     /// 检查域名是否应该被过滤
     /// 逻辑：白名单优先，然后检查黑名单
+    #[allow(dead_code)]
     pub fn should_filter(&self, domain: &str, _config: &FilterConfig) -> bool {
         // 1. 白名单优先：匹配白名单则不过滤
         if self.whitelist_patterns.iter().any(|p| Self::matches(domain, p)) {
@@ -108,11 +111,13 @@ impl DomainFilter {
     }
 
     /// 获取黑名单大小
+    #[allow(dead_code)]
     pub fn blacklist_size(&self) -> usize {
         self.blacklist_patterns.len()
     }
 
     /// 获取白名单大小
+    #[allow(dead_code)]
     pub fn whitelist_size(&self) -> usize {
         self.whitelist_patterns.len()
     }

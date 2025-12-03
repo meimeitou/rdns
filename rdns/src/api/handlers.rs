@@ -85,7 +85,7 @@ pub async fn get_config(
 }
 
 pub async fn reload_config(
-    State(state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
 ) -> Json<ApiResponse<()>> {
     // TODO: 实现配置热更新
     Json(ApiResponse::ok_message("Config reload not implemented yet"))

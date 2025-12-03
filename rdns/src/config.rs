@@ -27,7 +27,10 @@ pub struct ServerConfig {
 /// eBPF 配置
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct EbpfConfig {
-    /// 模式: "xdp" 或 "tc"
+    /// 部署模式:
+    /// - "xdp": 仅 XDP（过滤 + 抓取入口流量）
+    /// - "tc": 仅 TC（抓取双向流量，无过滤）
+    /// - "xdp_tc": XDP 过滤 + TC 抓取（推荐，XDP 关闭抓取）
     #[serde(default)]
     pub mode: EbpfMode,
     /// XDP flags: "default", "skb", "driver", "hw"
@@ -36,6 +39,10 @@ pub struct EbpfConfig {
     /// TC 方向: "ingress", "egress", "both"
     #[serde(default)]
     pub tc_direction: TcDirection,
+    /// XDP 是否启用流量抓取（仅在 mode=xdp 时有效）
+    /// 当 mode=xdp_tc 时，XDP 抓取自动关闭，由 TC 负责
+    #[serde(default = "default_true")]
+    pub xdp_capture_enabled: bool,
     /// XDP eBPF 程序路径（可选，默认自动搜索）
     #[serde(default)]
     pub xdp_program_path: Option<String>,
@@ -44,25 +51,35 @@ pub struct EbpfConfig {
     pub tc_program_path: Option<String>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
 impl Default for EbpfConfig {
     fn default() -> Self {
         Self {
             mode: EbpfMode::Xdp,
             xdp_flags: XdpFlags::Default,
-            tc_direction: TcDirection::Ingress,
+            tc_direction: TcDirection::Both,
+            xdp_capture_enabled: true,
             xdp_program_path: None,
             tc_program_path: None,
         }
     }
 }
 
-/// eBPF 模式
+/// eBPF 部署模式
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum EbpfMode {
+    /// 仅 XDP：过滤 + 抓取入口流量
     #[default]
     Xdp,
+    /// 仅 TC：抓取双向流量（无过滤）
     Tc,
+    /// XDP + TC：XDP 过滤，TC 抓取双向流量
+    #[serde(rename = "xdp_tc")]
+    XdpTc,
 }
 
 /// XDP 挂载模式
